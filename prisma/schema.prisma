@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  password  String   // hash
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sales     Sale[]
+}
+
+enum Role {
+  ADMIN
+  BODEGA
+  CAJA
+  USER
+}
+
+model Category {
+  id    String   @id @default(cuid())
+  name  String   @unique
+  products Product[]
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  sku           String    @unique
+  name          String
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id])
+  price         Decimal   @db.Decimal(18,4)
+  costAverage   Decimal   @db.Decimal(18,4)
+  ivaRate       Decimal   @db.Decimal(5,4) // ej 0.1900
+  stockMin      Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  movements     InventoryMovement[]
+  saleItems     SaleItem[]
+  purchaseItems PurchaseItem[]
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  nit       String?
+  phone     String?
+  email     String?
+  purchases Purchase[]
+}
+
+model Purchase {
+  id          String         @id @default(cuid())
+  supplierId  String
+  supplier    Supplier       @relation(fields: [supplierId], references: [id])
+  date        DateTime       @default(now())
+  note        String?
+  items       PurchaseItem[]
+  createdAt   DateTime       @default(now())
+}
+
+model PurchaseItem {
+  id          String   @id @default(cuid())
+  purchaseId  String
+  purchase    Purchase @relation(fields: [purchaseId], references: [id])
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  qty         Int
+  unitCost    Decimal  @db.Decimal(18,4)
+}
+
+model Sale {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  date        DateTime   @default(now())
+  items       SaleItem[]
+  subTotal    Decimal    @db.Decimal(18,4)
+  ivaTotal    Decimal    @db.Decimal(18,4)
+  total       Decimal    @db.Decimal(18,4)
+}
+
+model SaleItem {
+  id        String   @id @default(cuid())
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  qty       Int
+  unitPrice Decimal  @db.Decimal(18,4)
+  ivaRate   Decimal  @db.Decimal(5,4)
+  unitCost  Decimal  @db.Decimal(18,4)
+}
+
+model InventoryMovement {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  type       MovementType
+  refType    String   // 'PURCHASE' | 'SALE' | 'ADJUST'
+  refId      String
+  qty        Int
+  unitCost   Decimal  @db.Decimal(18,4)
+  createdAt  DateTime @default(now())
+}
+
+enum MovementType {
+  IN
+  OUT
+  ADJUST
+}
+
+model Expense {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  category  String
+  amount    Decimal  @db.Decimal(18,2)
+  note      String?
+}
+
+model Income {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  category  String
+  amount    Decimal  @db.Decimal(18,2)
+  note      String?
+}
+
+model CashSession {
+  id          String   @id @default(cuid())
+  openedAt    DateTime @default(now())
+  closedAt    DateTime?
+  openingCash Decimal  @db.Decimal(18,2)
+  closingCash Decimal? @db.Decimal(18,2)
+}
+
+model CashMovement {
+  id          String   @id @default(cuid())
+  sessionId   String
+  session     CashSession @relation(fields: [sessionId], references: [id])
+  date        DateTime @default(now())
+  concept     String
+  amount      Decimal  @db.Decimal(18,2) // + ingreso, - egreso
+}

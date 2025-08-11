@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: angelos-web
+    env: node
+    plan: free
+    buildCommand: |
+      npm ci
+      npx prisma generate
+      npm run build
+    startCommand: npm run start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase: angelos-db
+      - key: NEXT_PUBLIC_BASE_URL
+        sync: false
+    autoDeploy: true
+    healthCheckPath: /
+    region: oregon
+
+databases:
+  - name: angelos-db
+    plan: free
