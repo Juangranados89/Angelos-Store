@@ -1,3 +1,4 @@
+# render.yaml — Render Blueprint (corregido)
 services:
   - type: web
     name: angelos-web
@@ -10,7 +11,9 @@ services:
     startCommand: npm run start
     envVars:
       - key: DATABASE_URL
-        fromDatabase: angelos-db
+        fromDatabase:
+          name: angelos-db
+          property: connectionString
       - key: NEXT_PUBLIC_BASE_URL
         sync: false
     autoDeploy: true
