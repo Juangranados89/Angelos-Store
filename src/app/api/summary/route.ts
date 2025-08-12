@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma, } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client"; // 👈 importa Prisma para el tipo Decimal
 
 function monthRange(d = new Date()) {
   const start = new Date(d.getFullYear(), d.getMonth(), 1);
@@ -10,21 +11,25 @@ function monthRange(d = new Date()) {
 export async function GET() {
   const { start, end } = monthRange();
 
-  // Ingresos: total de ventas del mes
+  // Ingresos (ventas del mes)
   const salesAgg = await prisma.sale.aggregate({
     _sum: { total: true },
     where: { date: { gte: start, lt: end } },
   });
   const ingresos = Number(salesAgg._sum.total ?? 0);
 
-  // COGS: sum(unitCost * qty) de items de ventas del mes
+  // COGS (sum unitCost * qty)
   const saleItems = await prisma.saleItem.findMany({
     where: { sale: { date: { gte: start, lt: end } } },
     select: { unitCost: true, qty: true },
   });
-  const cogs = saleItems.reduce((s, it) => s + Number(it.unitCost) * it.qty, 0);
+  type SaleItemAgg = { unitCost: Prisma.Decimal; qty: number };
+  const cogs = saleItems.reduce(
+    (sum: number, it: SaleItemAgg) => sum + Number(it.unitCost) * it.qty,
+    0
+  );
 
-  // Egresos: gastos del mes (tabla Expense)
+  // Egresos (gastos del mes)
   const expensesAgg = await prisma.expense.aggregate({
     _sum: { amount: true },
     where: { date: { gte: start, lt: end } },
@@ -33,7 +38,7 @@ export async function GET() {
 
   const utilidad = ingresos - cogs - egresos;
 
-  // Inventario valorizado: Σ (stock actual * costAverage)
+  // Inventario valorizado
   const [products, grouped] = await Promise.all([
     prisma.product.findMany({ select: { id: true, costAverage: true } }),
     prisma.inventoryMovement.groupBy({
@@ -59,6 +64,6 @@ export async function GET() {
     cogs,
     utilidad,
     inventarioValorizado,
-    margen: ingresos ? (utilidad / ingresos) : 0,
+    margen: ingresos ? utilidad / ingresos : 0,
   });
 }
