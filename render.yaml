@@ -13,7 +13,7 @@ services:
         fromDatabase:
           name: angelos-db
           property: connectionString
-      - key: NEXT_PUBLIC_BASE_URL
+      - key: AUTH_SECRET
         sync: false
     autoDeploy: true
     healthCheckPath: /

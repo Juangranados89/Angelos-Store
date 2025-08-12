@@ -1,8 +1,1 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root { color-scheme: light; }
-body { @apply bg-neutral-50 text-neutral-900; }
-.container { @apply max-w-6xl mx-auto px-6; }
-.card { @apply bg-white rounded-2xl shadow-sm border; }
+@tailwind base;@tailwind components;@tailwind utilities;body{background:#fafafa;color:#111}.card{background:#fff;border:1px solid #e5e5e5;border-radius:1rem;padding:1rem}.btn{border:1px solid #e5e5e5;padding:.5rem 1rem;border-radius:.75rem}.input{border:1px solid #e5e5e5;border-radius:.5rem;padding:.5rem;width:100%}
