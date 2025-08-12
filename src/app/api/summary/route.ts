@@ -1,6 +1,7 @@
+// src/app/api/metrics/summary/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client"; // 👈 importa Prisma para el tipo Decimal
+import { Prisma, MovementType } from "@prisma/client";
 
 function monthRange(d = new Date()) {
   const start = new Date(d.getFullYear(), d.getMonth(), 1);
@@ -11,14 +12,14 @@ function monthRange(d = new Date()) {
 export async function GET() {
   const { start, end } = monthRange();
 
-  // Ingresos (ventas del mes)
+  // Ingresos: suma de ventas del mes
   const salesAgg = await prisma.sale.aggregate({
     _sum: { total: true },
     where: { date: { gte: start, lt: end } },
   });
   const ingresos = Number(salesAgg._sum.total ?? 0);
 
-  // COGS (sum unitCost * qty)
+  // COGS: Σ (unitCost * qty) de los items de ventas del mes
   const saleItems = await prisma.saleItem.findMany({
     where: { sale: { date: { gte: start, lt: end } } },
     select: { unitCost: true, qty: true },
@@ -29,7 +30,7 @@ export async function GET() {
     0
   );
 
-  // Egresos (gastos del mes)
+  // Egresos: suma de gastos del mes
   const expensesAgg = await prisma.expense.aggregate({
     _sum: { amount: true },
     where: { date: { gte: start, lt: end } },
@@ -38,7 +39,7 @@ export async function GET() {
 
   const utilidad = ingresos - cogs - egresos;
 
-  // Inventario valorizado
+  // Inventario valorizado = stock actual * costAverage
   const [products, grouped] = await Promise.all([
     prisma.product.findMany({ select: { id: true, costAverage: true } }),
     prisma.inventoryMovement.groupBy({
@@ -46,17 +47,30 @@ export async function GET() {
       _sum: { qty: true },
     }),
   ]);
+
+  type Grouped = {
+    productId: string;
+    type: MovementType;
+    _sum: { qty: number | null };
+  };
+  const gData = grouped as Grouped[];
+
   const stockMap = new Map<string, number>();
-  for (const g of grouped) {
+  for (const g of gData) {
     const v = Number(g._sum.qty ?? 0);
     const prev = stockMap.get(g.productId) ?? 0;
-    const delta = g.type === "IN" ? v : g.type === "OUT" ? -v : v;
+    let delta = v;
+    if (g.type === MovementType.OUT) delta = -v;
+    // MovementType.ADJUST suma (positivo/negativo) según cómo registraste qty;
+    // si siempre guardas qty positiva en ADJUST, aquí se suma como +v.
     stockMap.set(g.productId, prev + delta);
   }
-  const inventarioValorizado = products.reduce(
-    (acc, p) => acc + (stockMap.get(p.id) ?? 0) * Number(p.costAverage),
-    0
-  );
+
+  let inventarioValorizado = 0;
+  for (const p of products as { id: string; costAverage: Prisma.Decimal }[]) {
+    const stock = stockMap.get(p.id) ?? 0;
+    inventarioValorizado += stock * Number(p.costAverage);
+  }
 
   return NextResponse.json({
     ingresos,
