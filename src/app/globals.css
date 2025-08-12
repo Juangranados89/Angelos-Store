@@ -1,1 +1,39 @@
-@tailwind base;@tailwind components;@tailwind utilities;body{background:#fafafa;color:#111}.card{background:#fff;border:1px solid #e5e5e5;border-radius:1rem;padding:1rem}.btn{border:1px solid #e5e5e5;padding:.5rem 1rem;border-radius:.75rem}.input{border:1px solid #e5e5e5;border-radius:.5rem;padding:.5rem;width:100%}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tema ANGELOS */
+:root{
+  --bg:#faf6ef;
+  --panel:#ffffff;
+  --accent:#d4b36b; /* dorado */
+  --accent-600:#b8934d;
+  --ink:#111318;
+  --muted:#757575;
+  --sidebar:#1f232b;
+}
+html,body{height:100%}
+body{@apply text-[15px]; background:var(--bg); color:var(--ink);}
+
+.container{ @apply max-w-7xl mx-auto px-6; }
+
+.card{ @apply bg-white rounded-2xl shadow-sm border border-neutral-200; }
+.stat{ @apply card p-5; }
+.stat h3{ @apply text-sm text-neutral-500; }
+.stat .v{ @apply text-2xl mt-1 font-semibold; }
+
+.btn{ @apply inline-flex items-center gap-2 rounded-xl px-4 py-2 border border-neutral-300 bg-white hover:bg-neutral-50; }
+
+.badge{ @apply text-xs px-2 py-1 rounded-full; background: #fff4db; color:#8a6a1a; }
+
+.sidebar{
+  background: var(--sidebar);
+  color: #e9ecef;
+}
+.sidebar a{ @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-[14px]; color:#e4e5e7; }
+.sidebar a:hover{ background: rgba(255,255,255,.06); }
+.sidebar .active{ background: rgba(255,255,255,.12); }
+
+.topbar{ @apply sticky top-0 z-10; background: var(--panel); border-bottom:1px solid #e6e6e6;}
+.brand{ @apply font-semibold tracking-tight; color: var(--ink); }
+.brand .dot{ color: var(--accent-600);}
