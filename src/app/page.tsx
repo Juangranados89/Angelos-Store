@@ -1,11 +1,18 @@
+import { headers } from "next/headers";
+
 async function getMetrics() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/metrics/summary`, { cache: "no-store" });
+  const h = headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const base = `${proto}://${host}`;
+
+  const res = await fetch(`${base}/api/metrics/summary`, { cache: "no-store" });
+  if (!res.ok) throw new Error("No se pudo cargar métricas");
   return res.json();
 }
 
 export default async function Home() {
-  const m = await getMetrics(); // {ingresos, egresos, cogs, utilidad, inventarioValorizado, margen}
-
+  const m = await getMetrics();
   const fmt = (n:number)=> n.toLocaleString("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0});
   const pct = (n:number)=> (n*100).toFixed(1)+"%";
 
@@ -17,14 +24,7 @@ export default async function Home() {
         <div className="stat"><h3>Utilidad neta</h3><div className="v">{fmt(m.utilidad)}</div></div>
         <div className="stat"><h3>Margen</h3><div className="v">{pct(m.margen)}</div></div>
       </section>
-
-      <section className="grid gap-4 md:grid-cols-3">
-        <div className="stat"><h3>Inventario valorizado</h3><div className="v">{fmt(m.inventarioValorizado)}</div></div>
-        <div className="stat"><h3>Cuentas por cobrar</h3><div className="v">$ 0</div></div>
-        <div className="stat"><h3>Gastos por pagar</h3><div className="v">$ 0</div></div>
-      </section>
-
-      {/* deja el resto del panel como lo tienes */}
+      {/* resto de tu panel */}
     </div>
   );
 }
