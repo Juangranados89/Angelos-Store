@@ -6,13 +6,20 @@ async function getMetrics() {
   const proto = h.get("x-forwarded-proto") ?? "https";
   const base = `${proto}://${host}`;
 
-  const res = await fetch(`${base}/api/metrics/summary`, { cache: "no-store" });
-  if (!res.ok) throw new Error("No se pudo cargar métricas");
-  return res.json();
+  try {
+    const res = await fetch(`${base}/api/metrics/summary`, { cache: "no-store" });
+    if (!res.ok) return null; // evita throw y deja fallback
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
 export default async function Home() {
-  const m = await getMetrics();
+  const m = (await getMetrics()) ?? {
+    ingresos: 0, egresos: 0, cogs: 0, utilidad: 0,
+    inventarioValorizado: 0, margen: 0,
+  };
   const fmt = (n:number)=> n.toLocaleString("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0});
   const pct = (n:number)=> (n*100).toFixed(1)+"%";
 
@@ -24,7 +31,7 @@ export default async function Home() {
         <div className="stat"><h3>Utilidad neta</h3><div className="v">{fmt(m.utilidad)}</div></div>
         <div className="stat"><h3>Margen</h3><div className="v">{pct(m.margen)}</div></div>
       </section>
-      {/* resto de tu panel */}
+      {/* ... */}
     </div>
   );
 }
