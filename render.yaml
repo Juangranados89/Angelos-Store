@@ -1,14 +1,13 @@
-# render.yaml — Render Blueprint (corregido)
 services:
   - type: web
     name: angelos-web
     env: node
     plan: free
     buildCommand: |
-      npm ci
+      npm install --include=dev
       npx prisma generate
       npm run build
-    startCommand: npm run start
+    startCommand: npx prisma db push && npm run start
     envVars:
       - key: DATABASE_URL
         fromDatabase:
