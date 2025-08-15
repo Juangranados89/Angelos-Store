@@ -12,6 +12,7 @@
   --muted:#757575;
   --sidebar:#1f232b;
 }
+
 html,body{height:100%}
 body{@apply text-[15px]; background:var(--bg); color:var(--ink);}
 
@@ -37,3 +38,28 @@ body{@apply text-[15px]; background:var(--bg); color:var(--ink);}
 .topbar{ @apply sticky top-0 z-10; background: var(--panel); border-bottom:1px solid #e6e6e6;}
 .brand{ @apply font-semibold tracking-tight; color: var(--ink); }
 .brand .dot{ color: var(--accent-600);}
+
+/* Inputs “bonitos” */
+.input{
+  @apply w-full rounded-lg border border-neutral-300 bg-white
+         px-3 py-2 text-[14px]
+         focus:outline-none focus:ring-2 focus:ring-[var(--accent)]
+         focus:border-[var(--accent)]
+         placeholder:text-neutral-400;
+}
+
+/* Selects y textareas con el mismo look */
+select.input, textarea.input { @apply bg-white; }
+
+/* Quita spinners en <input type="number"> (Chrome/Edge) */
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+/* Quita flechas en Firefox */
+.input[type="number"] { -moz-appearance: textfield; }
+
+/* Tabla base (opcional) */
+.table { @apply min-w-full text-sm; }
+.table thead th { @apply p-2 text-left font-semibold text-neutral-600 bg-gray-50; }
+.table tbody td { @apply p-2; }
+.table tbody tr { @apply border-t; }
+.table .right { @apply text-right; }
