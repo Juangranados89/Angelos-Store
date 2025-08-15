@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
-import * as bcrypt from "bcryptjs";
+
 
 async function runSeed() {
   const email = process.env.INITIAL_ADMIN_EMAIL || "admin@angelos.local";
@@ -67,4 +67,5 @@ async function handler(req: Request) {
 
 export async function GET(req: Request)  { return handler(req); }
 export async function POST(req: Request) { return handler(req); }
+
 
