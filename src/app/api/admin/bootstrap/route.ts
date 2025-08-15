@@ -1,7 +1,7 @@
 // src/app/api/admin/bootstrap/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 
 
@@ -67,5 +67,6 @@ async function handler(req: Request) {
 
 export async function GET(req: Request)  { return handler(req); }
 export async function POST(req: Request) { return handler(req); }
+
 
 
