@@ -9,7 +9,7 @@ import {
 
 const items = [
   { label: "Panel", href: "/", icon: User },
-  { label: "Inventario", href: "/products", icon: Boxes },
+  { label: "Inventario", href: "/inventory", icon: Boxes }, // 👈 aquí el cambio
   { label: "Compras", href: "/purchases/new", icon: ShoppingCart },
   { label: "Ventas", href: "/sales/new", icon: BadgeDollarSign },
   { label: "Caja y Bancos", href: "#", icon: Wallet },
@@ -31,7 +31,8 @@ export default function SidebarNav() {
 
       <nav className="space-y-2">
         {items.map(({ label, href, icon: Icon }) => {
-          const active = path === href;
+          const active =
+            path === href || (href !== "/" && path.startsWith(href)); // 👈 activo también en subrutas
           return (
             <Link key={href} href={href} className="block">
               <span
