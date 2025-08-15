@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import * as bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 
-
 async function runSeed() {
   const email = process.env.INITIAL_ADMIN_EMAIL || "admin@angelos.local";
   const pass  = process.env.INITIAL_ADMIN_PASSWORD || "admin123";
@@ -26,7 +25,7 @@ async function runSeed() {
 
   const products = [
     { sku: "SKU-001", name: "Camisa Básica", garmentType: "Camisa", gender: "M", size: "M",  price: 50000, costAverage: 30000, ivaRate: 0.19 },
-    { sku: "SKU-002", name: "Pantalón Slim", garmentType: "Pantalón", gender: "M", size: "32", price: 90000, costAverage: 60000, ivaRate: 0.19 },
+    { sku: "SKU-002", name: "Pantalón Slim",  garmentType: "Pantalón", gender: "M", size: "32", price: 90000, costAverage: 60000, ivaRate: 0.19 },
   ];
 
   for (const p of products) {
@@ -41,9 +40,6 @@ async function runSeed() {
 }
 
 async function handler(req: Request) {
-  // Seguridad básica:
-  // - Si existe SEED_TOKEN en env, exige ?token=... o header x-seed-token.
-  // - Si NO existe SEED_TOKEN, solo permite si la BD está vacía (primera vez).
   const url   = new URL(req.url);
   const token = url.searchParams.get("token") || req.headers.get("x-seed-token") || "";
   const must  = process.env.SEED_TOKEN || "";
@@ -67,6 +63,3 @@ async function handler(req: Request) {
 
 export async function GET(req: Request)  { return handler(req); }
 export async function POST(req: Request) { return handler(req); }
-
-
-
