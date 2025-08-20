@@ -1,21 +1,26 @@
-# ANGELOS — Admin (Starter)
+# ANGELOS — Admin (MVP)
 
-Base mínima para panel administrativo (Inventario, Compras, Ventas, Caja, Reportes) con **Next.js 14 + Prisma + PostgreSQL**.
+## Desarrollo local
+```bash
+npm install
+cp .env.example .env   # edita DATABASE_URL
+npx prisma db push
+npm run dev
+```
 
-## Pasos locales
-1. `npm install`
-2. Copia `.env.example` a `.env` y completa `DATABASE_URL`.
-3. `npx prisma generate`
-4. `npm run dev`
+## Deploy en Render (Blueprint)
+- Conecta el repo y Render detectará `render.yaml`.
+- En **Environment** puedes definir:
+  - `NEXT_PUBLIC_BASE_URL` = URL del servicio
+  - `SEED_TOKEN` para habilitar el endpoint de bootstrap seguro
 
-## Despliegue en Render (Blueprint)
-1. Sube este repo a GitHub.
-2. En Render → **New** → **Blueprint** → selecciona el repo.
-3. Configura `NEXT_PUBLIC_BASE_URL` con la URL que Render te asigne.
-4. Tras el primer deploy: abre **Shell** del servicio y corre `npx prisma migrate deploy`.
+## Bootstrap (sin shell)
+Visita:
+```
+/api/admin/bootstrap?token=TU_TOKEN
+```
+Esto crea el admin y 2 productos demo.
 
-## Endpoints
-- `GET /api/products` — lista productos
-- `POST /api/products` — crea un producto `{ sku, name, price, costAverage, ivaRate, stockMin }`.
-
-> Esta base usa **promedio ponderado** para COGS. Kardex con `InventoryMovement`.
+## Inventario
+- UI: `/inventory`
+- API: `/api/inventory`, `/api/inventory/adjust`, `/api/products`, `/api/products/[id]`

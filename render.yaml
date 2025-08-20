@@ -8,7 +8,6 @@ services:
       npx prisma generate
       npm run build
     startCommand: |
-      # No dejes que un fallo de conexión/migración tumbe el arranque
       npx prisma db push --accept-data-loss || true
       npm run start
     envVars:
@@ -16,10 +15,12 @@ services:
         fromDatabase:
           name: angelos-db
           property: connectionString
+      - key: NEXT_PUBLIC_BASE_URL
+        sync: false
       - key: AUTH_SECRET
         sync: false
-    autoDeploy: true
     healthCheckPath: /
+    autoDeploy: true
     region: oregon
 
 databases:
