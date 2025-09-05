@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import { getInventoryValue } from "@/lib/inventory";
+import { getInventoryValue, getInvestmentMetrics } from "@/lib/inventory";
 
 // Marcar como dinámico para evitar pre-renderizado estático
 export const dynamic = 'force-dynamic';
@@ -30,16 +30,33 @@ export async function GET() {
   });
   const egresos = Number(expensesAgg._sum.amount ?? 0);
 
-  // Usar la función centralizada para calcular inventario valorizado
-  const inventarioValorizado = await getInventoryValue();
+  // Obtener métricas de inversión claras
+  const investmentMetrics = await getInvestmentMetrics();
   
   const utilidad = ingresos - egresos;
 
   return NextResponse.json({
+    // Métricas del mes
     ingresos,
     egresos,
     utilidad,
-    inventarioValorizado,
     margen: ingresos ? utilidad / ingresos : 0,
+    
+    // Métricas de inventario/inversión claras
+    historialInversion: investmentMetrics.totalInvestment,           // Todo el dinero invertido
+    costoActualInventario: investmentMetrics.currentInventoryValue,  // Valor actual del stock
+    valorVendido: investmentMetrics.soldInventoryValue,              // Inventario ya vendido
+    rotacionInventario: investmentMetrics.inventoryTurnover,         // % rotación
+    
+    // Para compatibilidad con código existente
+    inventarioValorizado: investmentMetrics.currentInventoryValue,
+    
+    // Descripciones para el frontend
+    descriptions: {
+      historialInversion: "Todo el dinero que has invertido en compras",
+      costoActualInventario: "Valor actual de tu stock (variable según ventas)",
+      valorVendido: "Valor del inventario que ya se vendió",
+      rotacionInventario: "Porcentaje del inventario vendido"
+    }
   });
 }

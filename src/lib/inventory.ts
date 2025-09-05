@@ -60,7 +60,8 @@ export async function getAllProductsStock() {
   return { products, stockMap };
 }
 
-// Función para calcular inventario valorizado
+// Función para calcular inventario valorizado (COSTO ACTUAL INVENTARIO)
+// Valor del stock actual usando costo promedio ponderado
 export async function getInventoryValue() {
   const { products, stockMap } = await getAllProductsStock();
   
@@ -72,6 +73,51 @@ export async function getInventoryValue() {
   }
   
   return totalValue;
+}
+
+// Función para calcular HISTORIAL DE INVERSIÓN
+// Todo el dinero que se ha invertido en compras históricamente
+export async function getTotalInvestmentHistory() {
+  const purchases = await prisma.inventoryMovement.findMany({
+    where: {
+      type: MovementType.IN,
+      refType: "PURCHASE"
+    },
+    select: {
+      qty: true,
+      unitCost: true
+    }
+  });
+
+  let totalInvestment = 0;
+  for (const purchase of purchases) {
+    const cost = Number(purchase.unitCost);
+    totalInvestment += purchase.qty * cost;
+  }
+
+  return totalInvestment;
+}
+
+// Función para obtener métricas de inversión detalladas
+export async function getInvestmentMetrics() {
+  const [currentInventoryValue, totalInvestment] = await Promise.all([
+    getInventoryValue(),
+    getTotalInvestmentHistory()
+  ]);
+
+  const soldInventoryValue = totalInvestment - currentInventoryValue;
+  const inventoryTurnover = totalInvestment > 0 ? (soldInventoryValue / totalInvestment) * 100 : 0;
+
+  return {
+    // Métricas principales
+    totalInvestment,           // Todo el dinero invertido
+    currentInventoryValue,     // Valor actual del stock
+    soldInventoryValue,        // Valor del inventario vendido
+    inventoryTurnover,         // Rotación de inventario (%)
+    
+    // Información adicional
+    investmentEfficiency: currentInventoryValue > 0 ? totalInvestment / currentInventoryValue : 0
+  };
 }
 
 // Función para calcular métricas por categoría
