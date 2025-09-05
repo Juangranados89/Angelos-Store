@@ -74,6 +74,63 @@ export async function getInventoryValue() {
   return totalValue;
 }
 
+// Función para calcular métricas por categoría
+export async function getInventoryByCategory() {
+  const { products, stockMap } = await getAllProductsStock();
+  
+  const categoryStats = new Map<string, {
+    totalProducts: number;
+    totalStock: number;
+    totalCost: number;
+    totalValue: number; // Valor al precio de venta
+    percentage: number; // Se calculará después
+  }>();
+  
+  let totalInventoryCost = 0;
+  
+  // Agrupar por categoría (garmentType)
+  for (const product of products) {
+    const stock = stockMap.get(product.id) ?? 0;
+    const cost = Number(product.costAverage);
+    const price = Number(product.price);
+    const category = product.garmentType || "SIN CATEGORÍA";
+    
+    const productCost = stock * cost;
+    const productValue = stock * price;
+    
+    if (!categoryStats.has(category)) {
+      categoryStats.set(category, {
+        totalProducts: 0,
+        totalStock: 0,
+        totalCost: 0,
+        totalValue: 0,
+        percentage: 0
+      });
+    }
+    
+    const stats = categoryStats.get(category)!;
+    stats.totalProducts += 1;
+    stats.totalStock += stock;
+    stats.totalCost += productCost;
+    stats.totalValue += productValue;
+    
+    totalInventoryCost += productCost;
+  }
+  
+  // Calcular porcentajes
+  for (const [category, stats] of categoryStats) {
+    stats.percentage = totalInventoryCost > 0 ? (stats.totalCost / totalInventoryCost) * 100 : 0;
+  }
+  
+  return {
+    categories: Array.from(categoryStats.entries()).map(([category, stats]) => ({
+      name: category,
+      ...stats
+    })),
+    totalInventoryCost
+  };
+}
+
 export async function applyPurchase(productId: string, qty: number, unitCost: Prisma.Decimal) {
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product) throw new Error("Producto no encontrado");
