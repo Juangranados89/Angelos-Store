@@ -7,7 +7,7 @@ async function getMetrics() {
   const base = `${proto}://${host}`;
 
   try {
-    const res = await fetch(`${base}/api/metrics/summary`, { cache: "no-store" });
+    const res = await fetch(`${base}/api/summary`, { cache: "no-store" });
     if (!res.ok) return null; // evita throw y deja fallback
     return res.json();
   } catch {
@@ -17,7 +17,7 @@ async function getMetrics() {
 
 export default async function Home() {
   const m = (await getMetrics()) ?? {
-    ingresos: 0, egresos: 0, cogs: 0, utilidad: 0,
+    ingresos: 0, egresos: 0, utilidad: 0,
     inventarioValorizado: 0, margen: 0,
   };
   const fmt = (n:number)=> n.toLocaleString("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0});

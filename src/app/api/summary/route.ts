@@ -23,17 +23,6 @@ export async function GET() {
   });
   const ingresos = Number(salesAgg._sum.total ?? 0);
 
-  // COGS: Σ (unitCost * qty) de los items de ventas del mes
-  const saleItems = await prisma.saleItem.findMany({
-    where: { sale: { date: { gte: start, lt: end } } },
-    select: { unitCost: true, qty: true },
-  });
-  type SaleItemAgg = { unitCost: Prisma.Decimal; qty: number };
-  const cogs = saleItems.reduce(
-    (sum: number, it: SaleItemAgg) => sum + Number(it.unitCost) * it.qty,
-    0
-  );
-
   // Egresos: suma de gastos del mes
   const expensesAgg = await prisma.expense.aggregate({
     _sum: { amount: true },
@@ -41,15 +30,14 @@ export async function GET() {
   });
   const egresos = Number(expensesAgg._sum.amount ?? 0);
 
-  const utilidad = ingresos - cogs - egresos;
-
   // Usar la función centralizada para calcular inventario valorizado
   const inventarioValorizado = await getInventoryValue();
+  
+  const utilidad = ingresos - egresos;
 
   return NextResponse.json({
     ingresos,
     egresos,
-    cogs,
     utilidad,
     inventarioValorizado,
     margen: ingresos ? utilidad / ingresos : 0,
