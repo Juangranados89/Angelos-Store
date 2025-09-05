@@ -22,13 +22,32 @@ export default function InventoryGrid() {
   const [savingId, setSavingId] = useState<string | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [investmentData, setInvestmentData] = useState<{
+    historialInversion: number;
+    costoActualInventario: number;
+  } | null>(null);
 
   async function load() {
     setLoading(true);
     setError(null);
     try {
+      // Cargar inventario
       const r = await fetch("/api/inventory", { cache: "no-store" });
       setRows(await r.json());
+      
+      // Cargar métricas de inversión desde summary
+      try {
+        const summaryRes = await fetch("/api/summary", { cache: "no-store" });
+        const summaryData = await summaryRes.json();
+        
+        setInvestmentData({
+          historialInversion: summaryData.historialInversion || 0,
+          costoActualInventario: summaryData.costoActualInventario || summaryData.inventarioValorizado || 0
+        });
+      } catch (e) {
+        console.log("No se pudieron cargar métricas de inversión:", e);
+      }
+      
     } catch (e: any) {
       setError("No se pudo cargar inventario");
     } finally {
@@ -129,7 +148,7 @@ export default function InventoryGrid() {
   // Calcular métricas del inventario
   const metrics = useMemo(() => {
     let totalVenta = 0;
-    let totalCosto = 0;
+    let costoActualInventario = 0; // Valor actual del stock
 
     filtered.forEach(row => {
       const stock = row.stock;
@@ -137,15 +156,15 @@ export default function InventoryGrid() {
       const costo = row.costAverage; // Usar el costo promedio real
       
       totalVenta += stock * precio;
-      totalCosto += stock * costo; // Costo real del inventario
+      costoActualInventario += stock * costo; // Solo el inventario actual
     });
 
-    const utilidadEstimada = totalVenta - totalCosto;
+    const utilidadEstimada = totalVenta - costoActualInventario;
     const margen = totalVenta > 0 ? (utilidadEstimada / totalVenta) * 100 : 0;
 
     return {
       totalVenta,
-      totalCosto,
+      costoActualInventario, // Renombrado para claridad
       utilidadEstimada,
       margen
     };
@@ -159,6 +178,36 @@ export default function InventoryGrid() {
           <div>
             <h2 className="text-lg font-semibold">Inventario</h2>
             <p className="text-sm text-gray-600">Gestiona los productos de tu negocio.</p>
+            
+            {/* Métricas de Inversión - Explicación clara */}
+            {investmentData && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-sm font-medium text-blue-800 mb-2">📊 Métricas de Inversión</h3>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <div className="font-medium text-blue-700">Historial de Inversión</div>
+                    <div className="text-lg font-bold text-blue-900">
+                      ${investmentData.historialInversion.toLocaleString('es-CO')}
+                    </div>
+                    <div className="text-blue-600">Todo el dinero que has invertido</div>
+                  </div>
+                  <div>
+                    <div className="font-medium text-blue-700">Inventario Actual</div>
+                    <div className="text-lg font-bold text-blue-900">
+                      ${investmentData.costoActualInventario.toLocaleString('es-CO')}
+                    </div>
+                    <div className="text-blue-600">Valor actual de tu stock</div>
+                  </div>
+                </div>
+                
+                {investmentData.historialInversion > investmentData.costoActualInventario && (
+                  <div className="mt-2 text-xs text-green-600">
+                    ✅ Has vendido ${(investmentData.historialInversion - investmentData.costoActualInventario).toLocaleString('es-CO')} 
+                    ({(((investmentData.historialInversion - investmentData.costoActualInventario) / investmentData.historialInversion) * 100).toFixed(1)}% de tu inversión)
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button 
@@ -192,11 +241,11 @@ export default function InventoryGrid() {
             <div className="text-xs text-blue-600">Valor total al precio de venta</div>
           </div>
           <div className="bg-orange-50 p-4 rounded-lg">
-            <h3 className="text-orange-700 text-sm font-medium">Total Costo</h3>
+            <h3 className="text-orange-700 text-sm font-medium">Costo Actual Inventario</h3>
             <div className="text-2xl font-bold text-orange-900">
-              ${metrics.totalCosto.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+              ${metrics.costoActualInventario.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
             </div>
-            <div className="text-xs text-orange-600">Costo promedio del inventario</div>
+            <div className="text-xs text-orange-600">Valor actual del stock (variable)</div>
           </div>
           <div className="bg-green-50 p-4 rounded-lg">
             <h3 className="text-green-700 text-sm font-medium">Utilidad Estimada</h3>
