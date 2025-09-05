@@ -2,19 +2,76 @@ import { prisma } from "./prisma";
 import { Prisma, MovementType } from "@prisma/client";
 
 export async function getCurrentStock(productId: string) {
-  const agg = (await prisma.inventoryMovement.groupBy({
-    by: ["type"],
+  const movements = await prisma.inventoryMovement.findMany({
     where: { productId },
-    _sum: { qty: true },
-  })) as { type: MovementType; _sum: { qty: number | null } }[];
+    select: { type: true, qty: true },
+  });
 
-  const sum = (t: MovementType) => {
-    const row = agg.find((a) => a.type === t);
-    return Number(row?._sum.qty ?? 0);
-    //            ^^^^^^^^^^^^^^^^^^^^^ evita NaN si es null/undefined
-  };
+  let stock = 0;
+  for (const movement of movements) {
+    switch (movement.type) {
+      case MovementType.IN:
+        stock += movement.qty;
+        break;
+      case MovementType.OUT:
+        stock -= movement.qty;
+        break;
+      case MovementType.ADJUST:
+        // Los ajustes pueden ser positivos o negativos
+        stock += movement.qty;
+        break;
+    }
+  }
 
-  return sum(MovementType.IN) - sum(MovementType.OUT) + sum(MovementType.ADJUST);
+  return stock;
+}
+
+// Función centralizada para calcular stock de todos los productos
+export async function getAllProductsStock() {
+  const [products, movements] = await Promise.all([
+    prisma.product.findMany({ orderBy: { createdAt: "asc" } }),
+    prisma.inventoryMovement.findMany({
+      select: { productId: true, type: true, qty: true },
+    }),
+  ]);
+
+  const stockMap = new Map<string, number>();
+  
+  for (const movement of movements) {
+    const currentStock = stockMap.get(movement.productId) ?? 0;
+    
+    let delta = 0;
+    switch (movement.type) {
+      case MovementType.IN:
+        delta = movement.qty;
+        break;
+      case MovementType.OUT:
+        delta = -movement.qty;
+        break;
+      case MovementType.ADJUST:
+        // Los ajustes pueden ser positivos o negativos
+        delta = movement.qty;
+        break;
+    }
+    
+    stockMap.set(movement.productId, currentStock + delta);
+  }
+
+  return { products, stockMap };
+}
+
+// Función para calcular inventario valorizado
+export async function getInventoryValue() {
+  const { products, stockMap } = await getAllProductsStock();
+  
+  let totalValue = 0;
+  for (const product of products) {
+    const stock = stockMap.get(product.id) ?? 0;
+    const cost = Number(product.costAverage);
+    totalValue += stock * cost;
+  }
+  
+  return totalValue;
 }
 
 export async function applyPurchase(productId: string, qty: number, unitCost: Prisma.Decimal) {

@@ -1,23 +1,9 @@
 // src/app/api/inventory/route.ts
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getAllProductsStock } from "@/lib/inventory";
 
 export async function GET() {
-  const [products, grouped] = await Promise.all([
-    prisma.product.findMany({ orderBy: { createdAt: "asc" } }),
-    prisma.inventoryMovement.groupBy({
-      by: ["productId", "type"],
-      _sum: { qty: true },
-    }),
-  ]);
-
-  const stockMap = new Map<string, number>();
-  for (const g of grouped) {
-    const v = Number(g._sum.qty ?? 0);
-    const prev = stockMap.get(g.productId) ?? 0;
-    const delta = g.type === "OUT" ? -v : v; // IN:+, OUT:-, ADJUST:+
-    stockMap.set(g.productId, prev + delta);
-  }
+  const { products, stockMap } = await getAllProductsStock();
 
   const rows = products.map((p) => ({
     id: p.id,

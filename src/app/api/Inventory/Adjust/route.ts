@@ -10,15 +10,14 @@ export async function POST(req: Request) {
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product) return NextResponse.json({ error: "Producto no existe" }, { status: 404 });
 
-  const type = delta > 0 ? MovementType.IN : MovementType.OUT;
-
+  // Usar MovementType.ADJUST con la cantidad real (positiva o negativa)
   await prisma.inventoryMovement.create({
     data: {
       productId,
-      type,
+      type: MovementType.ADJUST,
       refType: "ADJUST",
       refId: "manual",
-      qty: Math.abs(delta),
+      qty: delta, // Mantener el signo del delta
       unitCost: new Prisma.Decimal(product.costAverage),
     },
   });

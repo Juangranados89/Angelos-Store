@@ -1,7 +1,8 @@
 // src/app/api/metrics/summary/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Prisma, MovementType } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { getInventoryValue } from "@/lib/inventory";
 
 function monthRange(d = new Date()) {
   const start = new Date(d.getFullYear(), d.getMonth(), 1);
@@ -37,34 +38,8 @@ export async function GET() {
 
     const utilidad = ingresos - cogs - egresos;
 
-    const [products, grouped] = await Promise.all([
-      prisma.product.findMany({ select: { id: true, costAverage: true } }),
-      prisma.inventoryMovement.groupBy({
-        by: ["productId", "type"],
-        _sum: { qty: true },
-      }),
-    ]);
-
-    type Grouped = {
-      productId: string;
-      type: MovementType;
-      _sum: { qty: number | null };
-    };
-    const gData = grouped as Grouped[];
-
-    const stockMap = new Map<string, number>();
-    for (const g of gData) {
-      const v = Number(g._sum.qty ?? 0);
-      const prev = stockMap.get(g.productId) ?? 0;
-      const delta = g.type === MovementType.OUT ? -v : v;
-      stockMap.set(g.productId, prev + delta);
-    }
-
-    let inventarioValorizado = 0;
-    for (const p of products as { id: string; costAverage: Prisma.Decimal }[]) {
-      const stock = stockMap.get(p.id) ?? 0;
-      inventarioValorizado += stock * Number(p.costAverage);
-    }
+    // Usar la función centralizada para calcular inventario valorizado
+    const inventarioValorizado = await getInventoryValue();
 
     return NextResponse.json({
       ingresos,
