@@ -1,2 +1,6 @@
 import { NextResponse } from "next/server";import { prisma } from "@/lib/prisma";import { applySale } from "@/lib/inventory";import { Prisma } from "@prisma/client";
+
+// Marcar como dinámico para evitar pre-renderizado estático
+export const dynamic = 'force-dynamic';
+
 export async function POST(req:Request){const b=await req.json();const user=await prisma.user.findFirst({where:{email:b.userEmail}})||await prisma.user.findFirst();if(!user)return NextResponse.json({error:"Sin usuario"}, {status:400});let sub=new Prisma.Decimal(0);let iva=new Prisma.Decimal(0);const items:any[]=[];for(const it of b.items||[]){const prod=await prisma.product.findUnique({where:{sku:it.sku}});if(!prod)return NextResponse.json({error:`Producto ${it.sku} no existe`},{status:400});const qty=new Prisma.Decimal(it.qty);const price=new Prisma.Decimal(it.unitPrice);const ivaRate=new Prisma.Decimal(prod.ivaRate);const line=price.mul(qty);sub=sub.add(line);iva=iva.add(line.mul(ivaRate));const unitCost=await applySale(prod.id,Number(it.qty));items.push({productId:prod.id,qty:Number(it.qty),unitPrice:price,ivaRate,unitCost});}const sale=await prisma.sale.create({data:{userId:user.id,subTotal:sub,ivaTotal:iva,total:sub.add(iva),items:{create:items}}});return NextResponse.json({ok:true,id:sale.id},{status:201});}

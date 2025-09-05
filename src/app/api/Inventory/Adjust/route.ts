@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { MovementType, Prisma } from "@prisma/client";
 
+// Marcar como dinámico para evitar pre-renderizado estático
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   const { productId, delta } = await req.json(); // delta puede ser + o -
   if (!productId || typeof delta !== "number" || delta === 0) {

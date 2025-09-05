@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import * as bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 
+// Marcar como dinámico para evitar pre-renderizado estático
+export const dynamic = 'force-dynamic';
+
 async function runSeed() {
   const email = process.env.INITIAL_ADMIN_EMAIL || "admin@angelos.local";
   const pass  = process.env.INITIAL_ADMIN_PASSWORD || "admin123";

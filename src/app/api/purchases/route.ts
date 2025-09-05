@@ -1,2 +1,6 @@
 import { NextResponse } from "next/server";import { prisma } from "@/lib/prisma";import { applyPurchase } from "@/lib/inventory";import { Prisma } from "@prisma/client";
+
+// Marcar como dinámico para evitar pre-renderizado estático
+export const dynamic = 'force-dynamic';
+
 export async function POST(req:Request){const b=await req.json();const supplierName=b.supplier||"GENÉRICO";let s=await prisma.supplier.findFirst({where:{name:supplierName}});if(!s)s=await prisma.supplier.create({data:{name:supplierName}});const p=await prisma.purchase.create({data:{supplierId:s.id,note:b.note}});for(const it of b.items||[]){let prod=await prisma.product.findUnique({where:{sku:it.sku}});if(!prod){prod=await prisma.product.create({data:{sku:it.sku,name:it.sku,price:new Prisma.Decimal(0),costAverage:new Prisma.Decimal(it.unitCost),ivaRate:new Prisma.Decimal(0.19)}});}await prisma.purchaseItem.create({data:{purchaseId:p.id,productId:prod.id,qty:Number(it.qty),unitCost:new Prisma.Decimal(it.unitCost)}});await applyPurchase(prod.id,Number(it.qty),new Prisma.Decimal(it.unitCost));}return NextResponse.json({ok:true,id:p.id},{status:201});}

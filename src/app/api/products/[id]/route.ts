@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
+// Marcar como dinámico para evitar pre-renderizado estático
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const data = await req.json();
   if (data.price !== undefined) data.price = new Prisma.Decimal(data.price);

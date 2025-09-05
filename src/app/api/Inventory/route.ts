@@ -2,6 +2,9 @@
 import { NextResponse } from "next/server";
 import { getAllProductsStock } from "@/lib/inventory";
 
+// Marcar como dinámico para evitar pre-renderizado estático
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const { products, stockMap } = await getAllProductsStock();
 
